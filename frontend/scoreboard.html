@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWDP MATRIX - 实时计分板</title>
+    <!-- Vue 3 -->
+    <script src="/static/js/vue.global.js"></script>
+    <!-- Element Plus -->
+    <link rel="stylesheet" href="/static/css/element-plus.css">
+    <script src="/static/js/element-plus.js"></script>
+    <!-- Axios -->
+    <script src="/static/js/axios.min.js"></script>
+    
+    <style>
+        :root {
+            /* 浅色主题变量 (更暗一点) */
+            --bg-color: #e2e8f0;
+            --panel-bg: #f8fafc;
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #d97706;
+            --danger-color: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --border-color: #cbd5e1;
+            --header-bg: rgba(241, 245, 249, 0.95);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background-image: radial-gradient(#94a3b8 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* 顶部导航条 */
+        .header {
+            height: 70px;
+            background: var(--header-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #60a5fa, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .user-area-placeholder {
+            flex: 1;
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-main);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .main-container {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 状态总览卡片 */
+        .status-overview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+            opacity: 0.5;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 5px;
+            font-family: 'Consolas', monospace;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* 矩阵表格样式重写 */
+        .matrix-container {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .matrix-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Element UI Table Override */
+        .el-table {
+            background-color: transparent !important;
+            --el-table-border-color: var(--border-color);
+            --el-table-header-bg-color: transparent;
+            --el-table-tr-bg-color: transparent;
+            --el-table-row-hover-bg-color: #f1f5f9;
+            color: var(--text-main);
+        }
+        
+        .el-table th.el-table__cell {
+            background-color: transparent !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+        
+        .el-table td.el-table__cell {
+            border-bottom: 1px solid var(--border-color) !important;
+            background-color: transparent !important;
+            padding: 12px 0;
+        }
+        
+        .el-table--enable-row-hover .el-table__body tr:hover>td.el-table__cell {
+            background-color: #f1f5f9 !important;
+        }
+
+        .el-table::before { display: none; }
+
+        /* 排名勋章 */
+        .rank-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 0 auto;
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+        .rank-2 { background: linear-gradient(135deg, #94a3b8, #cbd5e1); color: white; }
+        .rank-3 { background: linear-gradient(135deg, #b45309, #d97706); color: white; }
+
+        /* 队伍名称 */
+        .team-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--text-main);
+        }
+
+        /* 呼吸灯指示器 */
+        .status-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .led.up {
+            background-color: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color), 0 0 15px var(--success-color);
+            animation: pulse-green 2s infinite;
+        }
+        
+        .led.down {
+            background-color: var(--danger-color);
+            box-shadow: 0 0 8px var(--danger-color);
+            opacity: 0.8;
+        }
+        
+        .led.null {
+            background-color: #475569;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 8px var(--success-color), 0 0 10px var(--success-color); }
+            50% { box-shadow: 0 0 8px var(--success-color), 0 0 20px var(--success-color); }
+            100% { box-shadow: 0 0 8px var(--success-color), 0 0 10px var(--success-color); }
+        }
+
+        .status-text {
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        /* 题目列的得分详情 */
+        .score-details {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .score-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            font-size: 13px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.02);
+            width: 130px; /* 固定宽度保证对齐，留出小数点的空间 */
+        }
+
+        .score-label-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .attack-score { color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .defense-score { color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.2); }
+
+        .score-val {
+            font-weight: bold;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            text-align: right;
+            flex: 1;
+        }
+
+        /* 隐藏空数据，优化显示 */
+        .score-val.zero {
+            color: #cbd5e1 !important;
+        }
+
+        /* 一二三血分值发光特效（浅色背景适配） */
+        .blood-text-1 { color: #dc2626 !important; font-weight: 900; text-shadow: 0 0 10px rgba(220, 38, 38, 0.4); } /* 一血红，加深 */
+        .blood-text-2 { color: #d97706 !important; font-weight: 900; text-shadow: 0 0 10px rgba(217, 119, 6, 0.4); } /* 二血黄，加深 */
+        .blood-text-3 { color: #2563eb !important; font-weight: 900; text-shadow: 0 0 10px rgba(37, 99, 235, 0.4); } /* 三血蓝，加深 */
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5); 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-area">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="#3b82f6" stroke-width="2"/>
+                        <path d="M8 12L12 8L16 12" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M12 16V8" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <div class="logo-text">SCORE MATRIX</div>
+                </div>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">Challenges</a>
+                    <a href="/scoreboard" class="nav-link active">Scoreboard</a>
+                </div>
+                <div class="user-area-placeholder"></div>
+            </div>
+        </div>
+        
+        <div class="main-container">
+            <!-- 顶部统计 -->
+            <div class="status-overview">
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #60a5fa;">{{ sysStatus.status === 'running' ? 'Round ' + sysStatus.current_round : sysStatus.status.toUpperCase() }}</div>
+                    <div class="stat-label">GAME STATUS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" :style="{color: sysStatus.remaining_time.startsWith('-') ? '#f59e0b' : 'var(--danger-color)'}">{{ sysStatus.remaining_time }}</div>
+                    <div class="stat-label">TIME REMAINING</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #a78bfa;">{{ scoreboard.teams.length }}</div>
+                    <div class="stat-label">ACTIVE TEAMS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="color: #10b981;">{{ scoreboard.challenges.length }}</div>
+                    <div class="stat-label">CHALLENGES</div>
+                </div>
+            </div>
+
+            <!-- 矩阵表格 -->
+            <div class="matrix-container" v-loading="loading" element-loading-background="rgba(15, 23, 42, 0.8)">
+                <div class="matrix-header">
+                    <div style="font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        实时攻防矩阵
+                    </div>
+                    
+                    <!-- 顶部一二三血图例 -->
+                    <div class="blood-legend" style="display: flex; gap: 15px; font-size: 13px; font-weight: bold;">
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #ef4444; box-shadow: 0 0 8px #ef4444;"></div>
+                            <span style="color: #ef4444;">First blood</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #f59e0b; box-shadow: 0 0 8px #f59e0b;"></div>
+                            <span style="color: #f59e0b;">second blood</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="width: 8px; height: 8px; border-radius: 50%; background-color: #3b82f6; box-shadow: 0 0 8px #3b82f6;"></div>
+                            <span style="color: #3b82f6;">third blood</span>
+                        </div>
+                    </div>
+
+                    <!--<el-switch v-model="autoRefresh" active-text="自动刷新" inactive-text="手动"></el-switch>
+                -->
+                </div>
+
+                <el-table :data="scoreboard.teams" style="width: 100%">
+                    <el-table-column type="index" label="排名" width="80" align="center">
+                        <template #default="scope">
+                            <div :class="['rank-badge', 'rank-' + (scope.$index + 1)]">
+                                {{ scope.$index + 1 }}
+                            </div>
+                        </template>
+                    </el-table-column>
+                    
+                    <el-table-column prop="name" label="队伍名称" width="180">
+                        <template #default="scope">
+                            <div class="team-name-cell">
+                                <img v-if="scope.row.avatar_url" :src="scope.row.avatar_url" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" />
+                                <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                {{ scope.row.name }}
+                            </div>
+                        </template>
+                    </el-table-column>
+                    
+                    <el-table-column prop="total_score" label="总分" width="100" sortable>
+                        <template #default="scope">
+                            <span style="color: var(--primary-color); font-weight: 800; font-size: 16px;">{{ scope.row.total_score }}</span>
+                        </template>
+                    </el-table-column>
+                    
+                    <!-- 动态渲染题目列 -->
+                    <el-table-column v-for="chal in scoreboard.challenges" :key="chal.id" :label="chal.name" align="center" min-width="150">
+                        <template #default="scope">
+                            <div class="score-details">
+                                <div class="score-item attack-score">
+                                    <div class="score-label-wrap">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                        <span style="white-space: nowrap;">攻击:</span> 
+                                    </div>
+                                    <span class="score-val" 
+                                          :class="[
+                                              {'zero': !scope.row.scores[chal.id]?.attack},
+                                              scope.row.scores[chal.id]?.blood ? 'blood-text-' + scope.row.scores[chal.id].blood : ''
+                                          ]"
+                                          :style="{ color: !scope.row.scores[chal.id]?.blood ? '#cbd5e1' : '' }">
+                                        {{ scope.row.scores[chal.id]?.attack || 0 }}
+                                    </span>
+                                </div>
+                                <div class="score-item defense-score">
+                                    <div class="score-label-wrap">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                                        <span style="white-space: nowrap;">防御:</span> 
+                                    </div>
+                                    <span class="score-val" 
+                                          :class="[
+                                              {'zero': !scope.row.scores[chal.id]?.defense},
+                                              scope.row.scores[chal.id]?.defense_blood ? 'blood-text-' + scope.row.scores[chal.id].defense_blood : ''
+                                          ]"
+                                          :style="{ color: !scope.row.scores[chal.id]?.defense_blood ? '#cbd5e1' : '' }">
+                                        {{ scope.row.scores[chal.id]?.defense || 0 }}
+                                    </span>
+                                </div>
+                            </div>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted, onUnmounted, watch } = Vue;
+
+        const app = createApp({
+            setup() {
+                const scoreboard = ref({ challenges: [], teams: [] });
+                const sysStatus = ref({ is_running: false, current_round: 0, remaining_time: '00:00:00', status: 'pending' });
+                const loading = ref(true);
+                const autoRefresh = ref(false);
+                let refreshTimer = null;
+                let statusTimer = null;
+
+                const api = axios.create({
+                    baseURL: '/api/v1'
+                });
+
+                const fetchScoreboard = async () => {
+                    try {
+                        const res = await api.get('/scoreboard');
+                        scoreboard.value = res.data;
+                    } catch (err) {
+                        console.error('获取计分板失败', err);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const fetchStatus = async () => {
+                    try {
+                        const res = await api.get('/status'); // 借用公开的 status 接口获取全局时间
+                        sysStatus.value = res.data;
+                    } catch (err) {
+                        console.error('获取状态失败', err);
+                    }
+                };
+
+                // 前端本地推演时间，避免频繁请求
+                let localCountdownTimer = null;
+                const startLocalCountdown = () => {
+                    if (localCountdownTimer) clearInterval(localCountdownTimer);
+                    localCountdownTimer = setInterval(() => {
+                        if (sysStatus.value && sysStatus.value.remaining_time && sysStatus.value.remaining_time !== "00:00:00") {
+                            let timeStr = sysStatus.value.remaining_time;
+                            let isNegative = timeStr.startsWith('-');
+                            if (isNegative) timeStr = timeStr.substring(1);
+                            
+                            let parts = timeStr.split(':');
+                            if (parts.length === 3) {
+                                let h = parseInt(parts[0], 10);
+                                let m = parseInt(parts[1], 10);
+                                let s = parseInt(parts[2], 10);
+                                let totalSeconds = h * 3600 + m * 60 + s;
+                                
+                                if (isNegative) {
+                                    totalSeconds--;
+                                    if (totalSeconds <= 0) {
+                                        fetchStatus(); // 倒计时结束，向后端请求新一轮的时间
+                                        fetchScoreboard(); // 轮次结束，主动刷新一次分数板获取滚轮结算分
+                                    }
+                                } else {
+                                    if (totalSeconds > 0) {
+                                        totalSeconds--;
+                                        // 当倒计时归零的瞬间，主动请求后端同步最新状态和分数
+                                        if (totalSeconds === 0) {
+                                            setTimeout(() => {
+                                                fetchStatus();
+                                                fetchScoreboard();
+                                            }, 1000); // 稍微延迟1秒，确保后端 scheduler 已经结算完毕
+                                        }
+                                    } else {
+                                        fetchStatus();
+                                    }
+                                }
+                                
+                                let newH = Math.floor(totalSeconds / 3600);
+                                let newM = Math.floor((totalSeconds % 3600) / 60);
+                                let newS = totalSeconds % 60;
+                                
+                                let newTimeStr = 
+                                    String(newH).padStart(2, '0') + ':' + 
+                                    String(newM).padStart(2, '0') + ':' + 
+                                    String(newS).padStart(2, '0');
+                                    
+                                sysStatus.value.remaining_time = isNegative ? '-' + newTimeStr : newTimeStr;
+                            }
+                        }
+                    }, 1000);
+                };
+
+                const startDataPolling = () => {
+                    if (refreshTimer) clearInterval(refreshTimer);
+                    refreshTimer = setInterval(() => {
+                        if (autoRefresh.value) {
+                            fetchScoreboard();
+                        }
+                    }, 5000); // 只有开启“自动刷新”开关时，才每 5 秒刷新一次矩阵数据
+                    
+                    if (statusTimer) clearInterval(statusTimer);
+                    statusTimer = setInterval(() => {
+                        if (autoRefresh.value) {
+                            fetchStatus(); // 只有开启“自动刷新”开关时，才定期校准时间
+                        }
+                    }, 10000);
+                };
+
+                watch(autoRefresh, (newVal) => {
+                    if (newVal) {
+                        fetchScoreboard();
+                    }
+                });
+
+                onMounted(() => {
+                    fetchScoreboard();
+                    fetchStatus().then(() => {
+                        startLocalCountdown();
+                    });
+                    startDataPolling();
+                });
+
+                onUnmounted(() => {
+                    if (refreshTimer) clearInterval(refreshTimer);
+                    if (statusTimer) clearInterval(statusTimer);
+                    if (localCountdownTimer) clearInterval(localCountdownTimer);
+                });
+
+                return {
+                    scoreboard, sysStatus, loading, autoRefresh
+                };
+            }
+        });
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWDP 攻防演练平台</title>
+    <!-- 引入 Element Plus 的 CSS -->
+    <link rel="stylesheet" href="/static/css/element-plus.css" />
+    <!-- 引入 Vue 3 -->
+    <script src="/static/js/vue.global.js"></script>
+    <!-- 引入 Element Plus -->
+    <script src="/static/js/element-plus.js"></script>
+    <!-- 引入 Axios -->
+    <script src="/static/js/axios.min.js"></script>
+    <style>
+        :root {
+            /* 浅色主题变量 (更暗一点) */
+            --primary-bg: #e2e8f0;
+            --secondary-bg: #f8fafc;
+            --accent-color: #2563eb;
+            --text-main: #1e293b;
+            --text-muted: #475569;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #d97706;
+            --border-color: #cbd5e1;
+            --header-bg: rgba(241, 245, 249, 0.95);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            background-image: radial-gradient(#94a3b8 1px, transparent 1px);
+            background-size: 20px 20px;
+            min-height: 100vh;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* 顶部导航栏 */
+        /* 顶部导航条 */
+        .header {
+            height: 70px;
+            background: var(--header-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1; /* 占据左侧空间 */
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex: 1; /* 占据中间空间 */
+        }
+
+        .user-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1; /* 占据右侧空间 */
+            justify-content: flex-end;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .team-badge {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #60a5fa;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .team-badge:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .avatar-preview {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex: 1; /* 占据中间空间 */
+        }
+
+        .nav-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .nav-link:hover {
+            color: var(--text-main);
+            background: rgba(0,0,0,0.05);
+        }
+
+        .nav-link.active {
+            color: #3b82f6;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden; /* 防止出现双重滚动条 */
+        }
+
+        /* 侧边栏公告区 */
+        .sidebar {
+            width: 300px;
+            background: var(--secondary-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: sticky;
+            top: 0;
+            background: var(--secondary-bg);
+            z-index: 5;
+        }
+
+        .announcement-list {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .announcement-card {
+            background: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .announcement-card:hover {
+            box-shadow: var(--card-shadow);
+            border-color: #94a3b8;
+        }
+
+        .ann-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .ann-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .ann-content {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .empty-announcements {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* 主体内容区 */
+        .content-area {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* 登录页面卡片 */
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 150px);
+        }
+
+        .login-card {
+            width: 420px;
+            background: var(--secondary-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 16px !important;
+            box-shadow: var(--card-shadow) !important;
+        }
+
+        .login-card .el-card__header {
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-main);
+            padding: 20px;
+        }
+
+        .login-card .el-form-item__label {
+            color: var(--text-muted);
+        }
+
+        .login-card .el-input__wrapper {
+            background-color: #f8fafc;
+            box-shadow: 0 0 0 1px var(--border-color) inset;
+        }
+        .login-card .el-input__inner {
+            color: var(--text-main);
+        }
+
+        /* 赛题卡片 */
+        .challenge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+        }
+
+        .challenge-card {
+            background: rgba(30, 41, 59, 0.7) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 12px !important;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .challenge-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            border-color: rgba(59, 130, 246, 0.4) !important;
+        }
+
+        /* 卡片顶部装饰条 */
+        .card-decorator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        }
+
+        .challenge-card .el-card__header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 20px;
+        }
+
+        .chal-header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chal-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Category Filter */
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Challenges Grid (New Style) */
+        .challenge-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .chal-card-new {
+            background: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+        }
+
+        .chal-card-new:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .chal-card-new.solved::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--success);
+        }
+
+        .chal-category {
+            font-size: 12px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .chal-name-new {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        .chal-scores {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .score-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .score-val {
+            color: var(--warning);
+            font-weight: bold;
+        }
+
+        /* Modal Styles */
+        .el-dialog {
+            background: var(--secondary-bg) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 16px !important;
+        }
+
+        .el-dialog__title {
+            color: var(--text-main) !important;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .modal-category {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #eff6ff;
+            color: var(--accent-color);
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .modal-scores {
+            display: flex;
+            justify-content: space-around;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-score-item {
+            text-align: center;
+        }
+
+        .modal-score-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .modal-score-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--warning);
+        }
+
+        .action-area {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        .history-table th {
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px;
+            font-weight: normal;
+        }
+
+        .history-table td {
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 8px;
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        .status-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .status-failed {
+            background: rgba(239, 68, 68, 0.1);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        /* 标签页定制 */
+        .el-tabs__item {
+            color: var(--text-muted) !important;
+            font-size: 15px;
+        }
+        .el-tabs__item.is-active {
+            color: var(--accent-color) !important;
+            font-weight: bold;
+        }
+        .el-tabs__nav-wrap::after {
+            background-color: var(--border-color) !important;
+        }
+
+        /* 攻击面板 */
+        .desc-box {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 20px;
+            min-height: 60px;
+            border: 1px solid var(--border-color);
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .terminal-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: #eff6ff;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: #1e3a8a;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* 防御面板 */
+        .defense-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--danger);
+        }
+
+        .upload-area {
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-color);
+            background: #eff6ff;
+        }
+
+        .file-input-custom {
+            display: none;
+        }
+
+        .file-label {
+            cursor: pointer;
+            color: var(--accent-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-label i {
+            font-size: 24px;
+        }
+
+        .selected-file {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #a78bfa;
+            background: rgba(167, 139, 250, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .defense-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .defense-actions .el-button {
+            flex: 1;
+        }
+
+        .check-result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .check-success {
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="light">
+    <div id="app">
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-area">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <div class="logo-text">AWDP MATRIX</div>
+                </div>
+                <div class="nav-links" v-if="token">
+                    <a href="/" class="nav-link active">Challenges</a>
+                    <a href="/scoreboard" class="nav-link">Scoreboard</a>
+                </div>
+                <div class="nav-links" v-else>
+                    <!-- 占位，保持居中 -->
+                </div>
+                <div class="user-area">
+                    <template v-if="token">
+                        <div class="team-badge" @click="showProfileModal = true">
+                            <img v-if="userProfile.avatar_url" :src="userProfile.avatar_url" class="avatar-preview" alt="avatar" />
+                            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            {{ username }}
+                        </div>
+                        <el-button type="danger" plain size="small" @click="logout" style="background: transparent; border-color: rgba(239, 68, 68, 0.5);">注销</el-button>
+                    </template>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-container">
+            <!-- 公告侧边栏 -->
+            <div class="sidebar" v-if="token">
+                <div class="sidebar-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    赛事公告 (Announcements)
+                </div>
+                <div class="announcement-list" v-if="announcements.length > 0">
+                    <div class="announcement-card" v-for="ann in announcements" :key="ann.id">
+                        <div class="ann-title">{{ ann.title }}</div>
+                        <div class="ann-time">{{ new Date(ann.created_at).toLocaleString() }}</div>
+                        <div class="ann-content">{{ ann.content }}</div>
+                    </div>
+                </div>
+                <div class="empty-announcements" v-else>
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity: 0.3; margin-bottom: 10px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <div>暂无最新公告</div>
+                </div>
+            </div>
+
+            <!-- 主体内容区 -->
+            <div class="content-area">
+                <!-- 登录视图 -->
+                <div v-if="!token" class="login-wrapper">
+                    <el-card class="login-card">
+                    <template #header>
+                        <div>SYSTEM LOGIN</div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 5px; font-weight: normal;">使用赛务下发的凭证接入矩阵</div>
+                    </template>
+                    <el-form :model="loginForm" label-position="top">
+                        <el-form-item label="TEAM ACCOUNT">
+                            <el-input v-model="loginForm.username" placeholder="Enter Account" size="large">
+                                <template #prefix>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                </template>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="PASSWORD">
+                            <el-input type="password" v-model="loginForm.password" placeholder="Enter Password" size="large" show-password>
+                                <template #prefix>
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                </template>
+                            </el-input>
+                        </el-form-item>
+                        <el-button type="primary" @click="doLogin" style="width: 100%; margin-top: 10px;" size="large" color="#3b82f6">CONNECT</el-button>
+                    </el-form>
+                </el-card>
+            </div>
+
+            <!-- 题目列表视图 -->
+            <div v-else style="padding: 40px; max-width: 1200px; margin: 0 auto;">
+                <!-- Category Filter -->
+                <div class="category-filter">
+                    <button 
+                        v-for="cat in availableCategories" 
+                        :key="cat"
+                        :class="['filter-btn', { active: currentCategory === cat }]"
+                        @click="currentCategory = cat"
+                    >
+                        {{ cat === 'all' ? 'ALL' : cat.toUpperCase() }}
+                    </button>
+                </div>
+
+                <div class="challenge-grid">
+                    <div 
+                        v-for="chal in filteredChallenges" 
+                        :key="chal.id" 
+                        :class="['chal-card-new', { solved: chal.solved }]"
+                        @click="openChallenge(chal)"
+                    >
+                        <div class="chal-category">{{ chal.category || 'web' }}</div>
+                        <div class="chal-name-new">{{ chal.name }}</div>
+                        <div class="chal-scores">
+                            <div class="score-item">
+                                <span>⚔️</span>
+                                <span class="score-val">{{ getAttackValue(chal) }}</span>
+                            </div>
+                            <div class="score-item" v-if="chal.chal_type === 'awdp' || !chal.chal_type">
+                                <span>🛡️</span>
+                                <span class="score-val">{{ getDefenseValue(chal) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Profile Modal -->
+        <el-dialog
+            v-model="showProfileModal"
+            title="TEAM PROFILE"
+            width="400px"
+            center
+            destroy-on-close
+        >
+            <div style="text-align: center; margin-bottom: 20px;">
+                <el-upload
+                    class="avatar-uploader"
+                    action="/api/v1/me/avatar"
+                    :headers="{ Authorization: 'Bearer ' + token }"
+                    :show-file-list="false"
+                    :on-success="handleAvatarSuccess"
+                    :on-error="handleAvatarError"
+                    style="border: 1px dashed var(--border-color); border-radius: 50%; width: 100px; height: 100px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; background: #f8fafc;"
+                >
+                    <img v-if="userProfile.avatar_url" :src="userProfile.avatar_url" style="width: 100%; height: 100%; object-fit: cover;" />
+                    <el-icon v-else style="font-size: 28px; color: #8c939d;"><Plus /></el-icon>
+                </el-upload>
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">点击上传队伍头像</div>
+            </div>
+
+            <el-form :model="passwordForm" label-position="top">
+                <el-form-item label="原密码">
+                    <el-input type="password" v-model="passwordForm.old_password" show-password></el-input>
+                </el-form-item>
+                <el-form-item label="新密码">
+                    <el-input type="password" v-model="passwordForm.new_password" show-password></el-input>
+                </el-form-item>
+                <el-button type="primary" style="width: 100%;" @click="updatePassword">修改密码</el-button>
+            </el-form>
+        </el-dialog>
+
+        <!-- Challenge Modal -->
+        <el-dialog
+            v-model="modalVisible"
+            :title="selectedChal?.name"
+            width="600px"
+            center
+            destroy-on-close
+        >
+            <div v-if="selectedChal" style="text-align: center;">
+                <div class="modal-category">{{ (selectedChal.category || 'web').toUpperCase() }}</div>
+                
+                <div class="modal-scores">
+                    <div class="modal-score-item">
+                        <div class="modal-score-label">ATTACK VALUE</div>
+                        <div class="modal-score-value">{{ getAttackValue(selectedChal) }}</div>
+                    </div>
+                    <div class="modal-score-item" v-if="selectedChal.chal_type === 'awdp' || !selectedChal.chal_type">
+                        <div class="modal-score-label">DEFENSE VALUE</div>
+                        <div class="modal-score-value">{{ getDefenseValue(selectedChal) }}</div>
+                    </div>
+                </div>
+
+                <div style="text-align: left; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6;">
+                    {{ selectedChal.description }}
+                </div>
+                
+                <div v-if="selectedChal.attachment_url" style="text-align: center; margin-bottom: 20px;">
+                    <a :href="selectedChal.attachment_url" target="_blank" style="text-decoration: none;">
+                        <el-button type="primary" plain>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            下载题目附件
+                        </el-button>
+                    </a>
+                </div>
+
+                <el-tabs v-model="selectedChal.activeTab" class="demo-tabs" stretch>
+                    <!-- 攻击标签页 -->
+                    <el-tab-pane label="⚔️ ATTACK" name="attack">
+                        <div class="action-area">
+                            <div v-if="selectedChal.attack_status === 'down' || !selectedChal.attack_status" style="text-align: center;">
+                                <p style="color: var(--text-muted); margin-bottom: 15px;">Target environment is not running.</p>
+                                <el-button type="primary" @click="startAttack(selectedChal)" :loading="selectedChal.starting">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    Launch Target Instance
+                                </el-button>
+                            </div>
+                            <div v-else>
+                                <div style="margin-bottom: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border-radius: 8px; font-family: monospace;">
+                                    {{ selectedChal.attack_connection_info || 'Environment is starting...' }}
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <el-input v-model="selectedChal.flagInput" placeholder="flag{...}"></el-input>
+                                    <el-button type="success" @click="submitFlag(selectedChal)" :loading="selectedChal.submitting">Submit</el-button>
+                                </div>
+                                <div style="margin-top: 20px; text-align: right;">
+                                    <el-button type="danger" link @click="destroyAttack(selectedChal)" :loading="selectedChal.destroying">Stop</el-button>
+                                </div>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    
+                    <!-- 防御标签页 -->
+                    <el-tab-pane label="🛡️ DEFENSE" name="defense" v-if="selectedChal.chal_type === 'awdp' || !selectedChal.chal_type">
+                        <div class="action-area" style="text-align: center;">
+                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
+                                <span>Status: <span :style="{color: selectedChal.defenseInfo ? 'var(--success)' : 'var(--warning)'}">{{ selectedChal.defenseInfo ? 'CHECKED' : 'PENDING' }}</span></span>
+                                <span>Remaining Chances: {{ selectedChal.remaining_defense_count !== undefined ? selectedChal.remaining_defense_count : selectedChal.initial_defense_count }} / {{ selectedChal.initial_defense_count }}</span>
+                            </div>
+                            
+                            <div class="upload-area">
+                                <label :for="'file-upload-' + selectedChal.id" class="file-label">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                    <span style="font-size: 14px;">Drop patch.tar.gz here or click to upload</span>
+                                </label>
+                                <input :id="'file-upload-' + selectedChal.id" type="file" class="file-input-custom" @change="e => handleFileChange(e, selectedChal)" accept=".gz,.tar.gz" />
+                                <div v-if="selectedChal.file" class="selected-file" style="margin-top: 10px; color: var(--accent-color);">
+                                    {{ selectedChal.file.name }}
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                <el-button type="warning" color="#f59e0b" style="color: #000; flex: 1;" @click="uploadDefense(selectedChal)" :disabled="!selectedChal.file" :loading="selectedChal.uploading">UPLOAD PATCH</el-button>
+                            </div>
+                            
+                            <div style="text-align: center;">
+                                <el-button link style="color: var(--text-muted); font-size: 13px;" @click="openHistoryModal(selectedChal)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 5px; vertical-align: -2px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    查看检测记录
+                                </el-button>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                </el-tabs>
+            </div>
+        </el-dialog>
+
+        <!-- History Modal -->
+        <el-dialog
+            v-model="historyModalVisible"
+            title="防御检测记录"
+            width="500px"
+            center
+            destroy-on-close
+        >
+            <div v-if="historyModalChal && historyModalChal.defenseHistory && historyModalChal.defenseHistory.length > 0">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>文件</th>
+                            <th>操作/结果</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in historyModalChal.defenseHistory" :key="item.id">
+                            <td>{{ item.filename }}</td>
+                            <td>
+                                <span v-if="item.status === 'success'" class="status-badge status-success">防御成功</span>
+                                <span v-else-if="item.status === 'failed'" class="status-badge status-failed">防御失败(异常)</span>
+                                <span v-else-if="item.status === 'exploited'" class="status-badge status-failed">漏洞未修</span>
+                                <span v-else-if="item.status === 'checking'" class="status-badge status-pending">CHECKING...</span>
+                                <span v-else-if="item.status === 'pending'" class="status-badge status-pending" style="cursor: pointer;" @click="checkDefense(historyModalChal, item)">申请防御(点击检测)</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-else style="text-align: center; color: var(--text-muted); padding: 30px 0;">
+                暂无检测记录
+            </div>
+        </el-dialog>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        const { ElMessage } = ElementPlus;
+
+        const app = createApp({
+            setup() {
+                const token = ref(localStorage.getItem('token') || '');
+                const username = ref(localStorage.getItem('username') || '');
+                const loginForm = ref({ username: '', password: '' });
+                const showProfileModal = ref(false);
+                const userProfile = ref({ avatar_url: '' });
+                const passwordForm = ref({ old_password: '', new_password: '' });
+                const announcements = ref([]);
+                
+                const categories = ['all', 'web', 'pwn', 'crypto', 'misc', 'reverse'];
+                const currentCategory = ref('all');
+                
+                const challenges = ref([]);
+                const modalVisible = ref(false);
+                const selectedChal = ref(null);
+                
+                const historyModalVisible = ref(false);
+                const historyModalChal = ref(null);
+
+                const availableCategories = computed(() => {
+                    const cats = new Set(challenges.value.map(c => c.category || 'web'));
+                    return ['all', ...categories.filter(c => c !== 'all' && cats.has(c))];
+                });
+
+                const api = axios.create({
+                    baseURL: '/api/v1'
+                });
+
+                // 请求拦截器注入 Token
+                api.interceptors.request.use(config => {
+                    if (token.value) {
+                        config.headers.Authorization = `Bearer ${token.value}`;
+                    }
+                    return config;
+                });
+
+                const doLogin = async () => {
+                    try {
+                        const payload = {
+                            username: loginForm.value.username,
+                            password: loginForm.value.password
+                        };
+                        const res = await api.post('/login', payload);
+                        token.value = res.data.access_token;
+                        username.value = loginForm.value.username;
+                        localStorage.setItem('token', token.value);
+                        localStorage.setItem('username', username.value);
+                        ElMessage({ message: 'ACCESS GRANTED: 成功接入系统', type: 'success', customClass: 'dark-toast' });
+                        fetchChallenges();
+                    } catch (err) {
+                        ElMessage.error('ACCESS DENIED: 凭证无效');
+                    }
+                };
+
+                const logout = () => {
+                    token.value = '';
+                    username.value = '';
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    challenges.value = [];
+                };
+
+                const fetchUserProfile = async () => {
+                    if (!token.value) return;
+                    try {
+                        const res = await api.get('/me');
+                        userProfile.value = res.data;
+                    } catch (err) {}
+                };
+
+                const handleAvatarSuccess = (res) => {
+                    userProfile.value.avatar_url = res.avatar_url;
+                    ElMessage.success('头像更新成功');
+                };
+
+                const handleAvatarError = () => {
+                    ElMessage.error('头像上传失败');
+                };
+
+                const updatePassword = async () => {
+                    try {
+                        await api.post('/me/password', passwordForm.value);
+                        ElMessage.success('密码修改成功');
+                        passwordForm.value = { old_password: '', new_password: '' };
+                        showProfileModal.value = false;
+                    } catch (err) {
+                        ElMessage.error(err.response?.data?.detail || '密码修改失败');
+                    }
+                };
+
+                const fetchAnnouncements = async () => {
+                    try {
+                        const res = await api.get('/announcements');
+                        announcements.value = res.data;
+                    } catch (err) {}
+                };
+
+                const fetchChallenges = async () => {
+                    if (!token.value) return;
+                    try {
+                        const res = await api.get('/challenges');
+                        challenges.value = res.data.map(c => {
+                            const existing = challenges.value.find(ex => ex.id === c.id);
+                            return {
+                                ...c, 
+                                activeTab: existing ? existing.activeTab : 'attack', 
+                                attackInfo: existing ? existing.attackInfo : '', 
+                                defenseInfo: existing ? existing.defenseInfo : '',
+                                flagInput: existing ? existing.flagInput : '',
+                                file: null,
+                                showHistory: existing ? existing.showHistory : false,
+                                starting: false,
+                                destroying: false,
+                                submitting: false,
+                                uploading: false,
+                                checking: false
+                            };
+                        });
+                        
+                        // Update selectedChal if modal is open
+                        if (modalVisible.value && selectedChal.value) {
+                            const updatedChal = challenges.value.find(c => c.id === selectedChal.value.id);
+                            if (updatedChal) {
+                                // Preserve local UI state when updating
+                                 const currentTab = selectedChal.value.activeTab;
+                                 const currentInput = selectedChal.value.flagInput;
+                                 const currentShowHistory = selectedChal.value.showHistory;
+                                 Object.assign(selectedChal.value, updatedChal);
+                                 selectedChal.value.activeTab = currentTab;
+                                 selectedChal.value.flagInput = currentInput;
+                                 selectedChal.value.showHistory = currentShowHistory;
+                            }
+                        }
+                    } catch (err) {
+                        if (err.response && err.response.status === 401) logout();
+                    }
+                };
+                
+                const filteredChallenges = computed(() => {
+                    if (currentCategory.value === 'all') return challenges.value;
+                    return challenges.value.filter(c => (c.category || 'web') === currentCategory.value);
+                });
+                
+                const openChallenge = (chal) => {
+                    selectedChal.value = { ...chal }; // create a copy to avoid immediate reactivity issues
+                    selectedChal.value.activeTab = 'attack';
+                    selectedChal.value.flagInput = '';
+                    
+                    fetchDefenseHistory(chal.id);
+                    
+                    modalVisible.value = true;
+                };
+
+                const fetchDefenseHistory = async (chalId) => {
+                    try {
+                        const res = await api.get(`/challenges/${chalId}/defense/history`);
+                        selectedChal.value.defenseHistory = res.data;
+                        historyModalChal.value.defenseHistory = res.data;
+                    } catch (err) {
+                        console.error('Failed to fetch defense history', err);
+                    }
+                };
+
+                const openHistoryModal = (chal) => {
+                    historyModalChal.value = chal;
+                    fetchDefenseHistory(chal.id);
+                    historyModalVisible.value = true;
+                };
+
+                const startAttack = async (chal) => {
+                    chal.starting = true;
+                    try {
+                        const res = await api.post(`/challenges/${chal.id}/start`);
+                        ElMessage.success('INSTANCE LAUNCHED');
+                        fetchChallenges(); // Refresh state
+                    } catch (err) {
+                        ElMessage.error(err.response?.data?.detail || '启动失败');
+                    } finally {
+                        chal.starting = false;
+                    }
+                };
+
+                const destroyAttack = async (chal) => {
+                    chal.destroying = true;
+                    try {
+                        await api.post(`/challenges/${chal.id}/destroy`);
+                        ElMessage.success('INSTANCE DESTROYED');
+                        fetchChallenges(); // Refresh state
+                    } catch (err) {
+                        ElMessage.error(err.response?.data?.detail || '销毁失败');
+                    } finally {
+                        chal.destroying = false;
+                    }
+                };
+
+                const submitFlag = async (chal) => {
+                    if (!chal.flagInput) {
+                        ElMessage.warning('请输入 Flag');
+                        return;
+                    }
+                    chal.submitting = true;
+                    try {
+                        const res = await api.post(`/challenges/${chal.id}/submit_flag`, { flag: chal.flagInput });
+                        ElMessage({ message: res.data.message, type: 'success', customClass: 'dark-toast' });
+                        chal.flagInput = ''; // Clear after success
+                    } catch (err) {
+                        ElMessage.error(err.response?.data?.detail || 'Flag 错误或已过期');
+                    } finally {
+                        chal.submitting = false;
+                    }
+                };
+
+                const handleFileChange = (e, chal) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        chal.file = e.target.files[0];
+                    }
+                };
+
+                const uploadDefense = async (chal) => {
+                    if (!chal.file) return;
+                    chal.uploading = true;
+                    const formData = new FormData();
+                    formData.append('file', chal.file);
+                    try {
+                        const res = await api.post(`/challenges/${chal.id}/defense`, formData);
+                        ElMessage.success('PATCH UPLOADED');
+                        
+                        if (chal.remaining_defense_count > 0) {
+                            chal.remaining_defense_count -= 1;
+                        }
+                        chal.file = null; 
+                        document.getElementById('file-upload-' + chal.id).value = ''; // 清空 input
+                    } catch (err) {
+                        ElMessage.error('上传失败');
+                    } finally {
+                        chal.uploading = false;
+                    }
+                };
+
+                const checkDefense = async (chal, historyItem) => {
+                    historyItem.status = 'checking'; // 乐观更新 UI
+                    try {
+                        const res = await api.post(`/challenges/${chal.id}/check/${historyItem.id}`);
+                        ElMessage.success('CHECK COMPLETED');
+                        chal.defenseInfo = res.data.message;
+                        historyItem.status = res.data.status;
+                        fetchDefenseHistory(chal.id); // 重新拉取历史记录
+                    } catch (err) {
+                        ElMessage.error(err.response?.data?.detail || 'Check 失败');
+                        historyItem.status = 'failed';
+                        fetchDefenseHistory(chal.id);
+                    }
+                };
+
+                const getAttackValue = (chal) => {
+                    if (!chal) return 0;
+                    return chal.current_attack_score !== undefined ? chal.current_attack_score.toFixed(2) : chal.base_score;
+                };
+
+                const getDefenseValue = (chal) => {
+                    if (!chal) return 0;
+                    return chal.current_defense_score !== undefined ? chal.current_defense_score.toFixed(2) : chal.base_score;
+                };
+
+                onMounted(() => {
+                    fetchAnnouncements(); // Public data
+                    if (token.value) {
+                        fetchUserProfile();
+                        fetchChallenges();
+                    }
+                });
+
+                return {
+                    token, username, loginForm, doLogin, logout,
+                    showProfileModal, userProfile, passwordForm, handleAvatarSuccess, handleAvatarError, updatePassword,
+                    challenges, getAttackValue, getDefenseValue, startAttack, destroyAttack, submitFlag,
+                    handleFileChange, uploadDefense, checkDefense, fetchChallenges,
+                    categories, availableCategories, currentCategory, filteredChallenges,
+                    modalVisible, selectedChal, openChallenge,
+                    historyModalVisible, historyModalChal, openHistoryModal,
+                    announcements
+                };
+            }
+        });
+
+        // 注入主题相关的样式覆盖 ElementPlus 的默认样式
+        const style = document.createElement('style');
+        style.textContent = `
+            .el-message.dark-toast { background-color: #ffffff; border-color: #3b82f6; color: #1e293b; }
+        `;
+        document.head.appendChild(style);
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+</html>

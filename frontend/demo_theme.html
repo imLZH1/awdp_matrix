@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWDP Platform Demo</title>
+    <!-- Import Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Import Element Plus -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <script src="https://unpkg.com/element-plus"></script>
+    
+    <style>
+        :root {
+            /* 浅色主题变量 */
+            --bg-dark: #f8fafc;
+            --bg-card: #ffffff;
+            --primary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --header-bg: rgba(255, 255, 255, 0.9);
+            --modal-bg: #ffffff;
+            --modal-overlay: rgba(241, 245, 249, 0.8);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --card-hover-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .header {
+            height: 60px;
+            background: var(--header-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .main-content {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .chal-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+        }
+
+        .chal-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .chal-card.solved::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--success);
+        }
+
+        .chal-category {
+            font-size: 12px;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .chal-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        .chal-scores {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .score-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .score-val {
+            color: var(--warning);
+            font-weight: bold;
+        }
+
+        /* Modal Styles */
+        .el-dialog {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color);
+            border-radius: 16px !important;
+        }
+
+        .el-dialog__title {
+            color: var(--text-main) !important;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .modal-category {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #eff6ff;
+            color: var(--primary);
+            border-radius: 12px;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+
+        .modal-scores {
+            display: flex;
+            justify-content: space-around;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-score-item {
+            text-align: center;
+        }
+
+        .modal-score-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .modal-score-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--warning);
+        }
+
+        .el-tabs__item {
+            color: var(--text-muted) !important;
+        }
+        
+        .el-tabs__item.is-active {
+            color: var(--primary) !important;
+        }
+
+        .action-area {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+<body class="light">
+    <div id="app">
+        <header class="header">
+            <div style="font-size: 20px; font-weight: bold;">AWDP Platform</div>
+            <div style="color: var(--primary);">Team: Pwners</div>
+        </header>
+
+        <main class="main-content">
+            <!-- Category Filter -->
+            <div class="category-filter">
+                <button 
+                    v-for="cat in categories" 
+                    :key="cat"
+                    :class="['filter-btn', { active: currentCategory === cat }]"
+                    @click="currentCategory = cat"
+                >
+                    {{ cat === 'all' ? 'ALL' : cat.toUpperCase() }}
+                </button>
+            </div>
+
+            <!-- Challenges Grid -->
+            <div class="challenges-grid">
+                <div 
+                    v-for="chal in filteredChallenges" 
+                    :key="chal.id" 
+                    :class="['chal-card', { solved: chal.solved }]"
+                    @click="openChallenge(chal)"
+                >
+                    <div class="chal-category">{{ chal.category }}</div>
+                    <div class="chal-name">{{ chal.name }}</div>
+                    <div class="chal-scores">
+                        <div class="score-item">
+                            <span>⚔️</span>
+                            <span class="score-val">{{ chal.attack_score }}</span>
+                        </div>
+                        <div class="score-item">
+                            <span>🛡️</span>
+                            <span class="score-val">{{ chal.defense_score }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Challenge Modal (CTFd Style) -->
+        <el-dialog
+            v-model="modalVisible"
+            :title="selectedChal?.name"
+            width="600px"
+            center
+            destroy-on-close
+        >
+            <div v-if="selectedChal" style="text-align: center;">
+                <div class="modal-category">{{ selectedChal.category.toUpperCase() }}</div>
+                
+                <div class="modal-scores">
+                    <div class="modal-score-item">
+                        <div class="modal-score-label">ATTACK VALUE</div>
+                        <div class="modal-score-value">{{ selectedChal.attack_score }}</div>
+                    </div>
+                    <div class="modal-score-item">
+                        <div class="modal-score-label">DEFENSE VALUE</div>
+                        <div class="modal-score-value">{{ selectedChal.defense_score }}</div>
+                    </div>
+                </div>
+
+                <div style="text-align: left; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6;">
+                    {{ selectedChal.description }}
+                </div>
+
+                <el-tabs v-model="activeTab" class="demo-tabs" stretch>
+                    <el-tab-pane label="⚔️ ATTACK" name="attack">
+                        <div class="action-area">
+                            <div v-if="!selectedChal.is_started" style="text-align: center;">
+                                <p style="color: var(--text-muted); margin-bottom: 15px;">Target environment is not running.</p>
+                                <el-button type="primary" @click="selectedChal.is_started = true">Launch Target Instance</el-button>
+                            </div>
+                            <div v-else>
+                                <div style="margin-bottom: 20px; padding: 15px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 8px; font-family: monospace;">
+                                    nc 172.18.0.5 10001
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <el-input v-model="flagInput" placeholder="flag{...}"></el-input>
+                                    <el-button type="success" @click="submitFlag">Submit</el-button>
+                                </div>
+                            </div>
+                        </div>
+                    </el-tab-pane>
+                    
+                    <el-tab-pane label="🛡️ DEFENSE" name="defense">
+                        <div class="action-area" style="text-align: center;">
+                            <div style="margin-bottom: 15px; display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted);">
+                                <span>Status: <span style="color: var(--warning);">Pending</span></span>
+                                <span>Remaining Chances: 3/3</span>
+                            </div>
+                            
+                            <el-upload
+                                class="upload-demo"
+                                drag
+                                action="#"
+                                :auto-upload="false"
+                                accept=".tar.gz"
+                                style="margin-bottom: 15px;"
+                            >
+                                <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+                                <div class="el-upload__text">
+                                    Drop patch.tar.gz here or <em>click to upload</em>
+                                </div>
+                            </el-upload>
+                            
+                            <el-button type="warning" style="width: 100%;">Upload & Check Defense</el-button>
+                        </div>
+                    </el-tab-pane>
+                </el-tabs>
+            </div>
+        </el-dialog>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+        const { ElMessage } = ElementPlus;
+
+        const app = createApp({
+            setup() {
+                const categories = ['all', 'web', 'pwn', 'crypto', 'misc'];
+                const currentCategory = ref('all');
+                
+                const challenges = ref([
+                    { id: 1, name: 'easy_web', category: 'web', attack_score: 500, defense_score: 50, description: 'A simple PHP website with a known vulnerability. Patch it before others exploit it.', solved: true, is_started: true },
+                    { id: 2, name: 'baby_stack', category: 'pwn', attack_score: 485.5, defense_score: 50, description: 'Classic stack overflow. No canary found.', solved: false, is_started: false },
+                    { id: 3, name: 'hard_php', category: 'web', attack_score: 500, defense_score: 50, description: 'Bypass disable_functions and get RCE.', solved: false, is_started: false },
+                    { id: 4, name: 'heap_master', category: 'pwn', attack_score: 500, defense_score: 50, description: 'Glibc 2.31 heap exploitation.', solved: false, is_started: false },
+                ]);
+
+                const filteredChallenges = computed(() => {
+                    if (currentCategory.value === 'all') return challenges.value;
+                    return challenges.value.filter(c => c.category === currentCategory.value);
+                });
+
+                const modalVisible = ref(false);
+                const selectedChal = ref(null);
+                const activeTab = ref('attack');
+                const flagInput = ref('');
+
+                const openChallenge = (chal) => {
+                    selectedChal.value = chal;
+                    activeTab.value = 'attack';
+                    flagInput.value = '';
+                    modalVisible.value = true;
+                };
+
+                const submitFlag = () => {
+                    if (!flagInput.value) return;
+                    ElMessage.success('Flag submitted successfully!');
+                    flagInput.value = '';
+                };
+
+                return {
+                    categories,
+                    currentCategory,
+                    filteredChallenges,
+                    modalVisible,
+                    selectedChal,
+                    activeTab,
+                    flagInput,
+                    openChallenge,
+                    submitFlag
+                };
+            }
+        });
+        
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+</html>

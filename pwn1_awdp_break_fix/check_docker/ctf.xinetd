@@ -1,0 +1,18 @@
+service ctf
+{
+    disable         = no
+    socket_type     = stream
+    protocol        = tcp
+    wait            = no
+    user            = root
+    server          = /usr/sbin/chroot
+    server_args     = --userspec=1001:1001 /home/ctf ./run.sh
+    type            = UNLISTED
+    port            = 9999
+    bind            = 0.0.0.0
+    banner_fail     = /etc/banner_fail
+    per_source      = 512
+    rlimit_cpu      = 20 #
+    rlimit_as       = 100M 
+}
+
