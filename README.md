@@ -49,7 +49,7 @@ AWDP Matrix 是一款现代化、轻量级且高度解耦的**攻防对抗（AWD
 ### 安装部署
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/your-username/awdp-matrix.git
+git clone https://github.com/imLZH1/awdp_matrix.git
 cd awdp-matrix
 
 # 2. 创建并激活虚拟环境
