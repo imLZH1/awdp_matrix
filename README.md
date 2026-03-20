@@ -6,6 +6,17 @@
 ![Vue3](https://img.shields.io/badge/Vue.js-3.x-4fc08d)
 ![Docker](https://img.shields.io/badge/Docker-Engine-2496ed)
 
+
+
+<img width="2107" height="1182" alt="image" src="https://github.com/user-attachments/assets/3b82a297-88e6-4048-9268-3a593baf18db" />
+
+<img width="1860" height="1258" alt="image" src="https://github.com/user-attachments/assets/a212edd1-be1d-4838-9f34-827c418f5dd6" />
+
+<img width="2096" height="1083" alt="image" src="https://github.com/user-attachments/assets/6527449f-89ad-4dc6-9cf0-882e2cea5b96" />
+
+<img width="2057" height="1024" alt="image" src="https://github.com/user-attachments/assets/7607d895-c0d0-42c1-80ac-5ec3e5663082" />
+
+
 AWDP Matrix 是一款现代化、轻量级且高度解耦的**攻防对抗（AWDP）与解题（CTF）综合赛事平台**。
 
 本项目致力于解决传统 AWDP 平台部署繁琐、判题逻辑与平台高度耦合、资源占用过高等痛点。通过“瘦平台、胖容器”的设计理念，实现题目环境的完全隔离与灵活调度。
@@ -114,6 +125,8 @@ awdp-matrix/
    在 Attack Image 的基础上，安装 Python3 和相关测试库（如 pwntools）。必须在根目录放置平台约定的 `/platform_run.py` 调度脚本。
 
 详细的题目制作与打包示例，请参考目录下的 `pwn1_awdp_break_fix` 文件夹。
+
+
 
 ## bug 
 好像又一堆漏洞和bug;
