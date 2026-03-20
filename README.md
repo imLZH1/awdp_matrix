@@ -116,7 +116,7 @@ awdp-matrix/
 详细的题目制作与打包示例，请参考目录下的 `pwn1_awdp_break_fix` 文件夹。
 
 ## bug 
-可能存在很多bug 和漏洞,还没有测，
+好像又一堆漏洞和bug;
 
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
