@@ -49,8 +49,10 @@ AWDP Matrix 是一款现代化、轻量级且高度解耦的**攻防对抗（AWD
 ### 安装部署
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/imLZH1/awdp_matrix.git
-cd awdp_matrix
+cd /opt/ && git clone https://github.com/imLZH1/awdp_matrix.git
+
+mov awdp_matrix awdp
+cd awdp
 
 # 2. 创建并激活虚拟环境
 python3 -m venv venv
@@ -59,15 +61,28 @@ source venv/bin/activate
 # 3. 安装依赖
 pip install -r backend/requirements.txt
 
-# 4. 启动平台 (开发模式)
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-```
 
 ### 初始化数据
-第一次启动后，默认不会有任何队伍和赛题。你可以通过内置脚本快速生成测试数据：
-```bash
-python init_data.py
+(venv) ➜  awdp git:(main) ✗ venv/bin/python init_data.py
+# 4. 启动平台 (开发模式)                                                                                                     
+(venv) ➜  awdp git:(main) ✗ source /opt/awdp/venv/bin/activate && export PYTHONPATH=/opt/awdp && uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+
+
+
+# 写死了，所以  mov awdp_matrix awdp 了， 你可以可以自行修改
+# (venv) ➜  awdp git:(main) grep -R "/opt/awdp/"
+# grep: backend/__pycache__/main.cpython-312.pyc: binary file matches
+# backend/main.py:frontend_dir = "/opt/awdp/frontend"
+# backend/api/v1/admin.py:    upload_dir = "/opt/awdp/frontend/avatars"
+# backend/api/v1/admin.py:    upload_dir = "/opt/awdp/frontend/attachments"
+# grep: backend/api/v1/__pycache__/api.cpython-312.pyc: binary file matches
+# grep: backend/api/v1/__pycache__/admin.cpython-312.pyc: binary file matches
+# backend/api/v1/api.py:    upload_dir = "/opt/awdp/frontend/avatars"
+# backend/api/v1/api.py:    upload_dir = "/opt/awdp/patches"
+
+
 ```
+
 默认管理员账号：`admin` / `admin`
 
 ## 📂 目录结构说明
